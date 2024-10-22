@@ -9,6 +9,7 @@
 #include <queue>
 #include <vector>  
 #include <iostream>
+#include <fstream>
 #include <unistd.h>
 #include <future>
 #include <sys/types.h> 

@@ -45,8 +45,22 @@ void Print(string str) {
 /*--------------------------------------------------------------------------------------------------------------------*/
 bool CallBack (int Socket, char* Data, int* Length) {
     Print(Data);
-    sprintf(Data, "I see\r\n");
+    //sprintf(Data, "I see\r\n");
+
+    int Page_Length;
+
+    ifstream file("index.html");
+    string Line = "";
+    char Page_Data[10240];
+    memset(Page_Data, 0, sizeof(Page_Data));
+    while (getline(file, Line)) {
+        strcat(Page_Data, Line.c_str());
+        Page_Length += Line.length();
+    }
+    sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: %d\n\n", Page_Length);
     *Length = strlen(Data);
+    strcpy(&Data[*Length], Page_Data);
+    *Length += Page_Length;
     return true;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
