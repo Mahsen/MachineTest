@@ -9,7 +9,7 @@
     Site : https://www.mahsen.ir
     Tel : +989124662703
     Email : info@mahsen.ir
-    Last Update : 2024/10/12
+    Last Update : 2024/10/21
 */
 /************************************************** Warnings **********************************************************/
 /*
@@ -20,72 +20,71 @@
     Nothing
 */
 /************************************************** Includes **********************************************************/
-/* A simple server in the internet domain using TCP The port number is passed as an argument */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
+#include "Defines.hpp"
+#include "TCP.hpp"
 /************************************************** Defineds **********************************************************/
 /*
     Nothing
 */
 /************************************************** Names *************************************************************/
 using namespace std;
+using namespace net;
 /************************************************** Variables *********************************************************/
-/*
-    Nothing
-*/
+std::mutex Mutex_print;
 /************************************************** Opjects ***********************************************************/
 /*
     Nothing
 */
 /************************************************** Functions *********************************************************/
-void error(const char *msg)
-{
-    perror(msg);
-    exit(1);
+void Print(string str) {
+    /* Lock untile return of block */
+    std::lock_guard<std::mutex> guard(Mutex_print);
+    /* Show on console */
+    std::cout << str << endl;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
-int main(int argc, char *argv[]) {
-     int sockfd, newsockfd, portno;
-     socklen_t clilen;
-     char buffer[256];
-     struct sockaddr_in serv_addr, cli_addr;
-     int n;
-     if (argc < 2) {
-         fprintf(stderr,"ERROR, no port provided\n");
-         exit(1);
-     }
-     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-     if (sockfd < 0) 
-        error("ERROR opening socket");
-     bzero((char *) &serv_addr, sizeof(serv_addr));
-     portno = atoi(argv[1]);
-     serv_addr.sin_family = AF_INET;
-     serv_addr.sin_addr.s_addr = INADDR_ANY;
-     serv_addr.sin_port = htons(portno);
-     if (bind(sockfd, (struct sockaddr *) &serv_addr,
-              sizeof(serv_addr)) < 0) 
-              error("ERROR on binding");
-     listen(sockfd,5);
-     clilen = sizeof(cli_addr);
-     newsockfd = accept(sockfd, 
-                 (struct sockaddr *) &cli_addr, 
-                 &clilen);
-     if (newsockfd < 0) 
-          error("ERROR on accept");
-     bzero(buffer,256);
-     n = read(newsockfd,buffer,255);
-     if (n < 0) error("ERROR reading from socket");
-     printf("Here is the message: %s\n",buffer);
-     n = write(newsockfd,"I got your message",18);
-     if (n < 0) error("ERROR writing to socket");
-     close(newsockfd);
-     close(sockfd);
-
+bool CallBack (int Socket, char* Data, int* Length) {
+    Print(Data);
+    sprintf(Data, "I see\r\n");
+    *Length = strlen(Data);
+    return true;
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+int main(int argc, char **argv) {
+    /* Sample */
+    // sudo ./main -p 1020
+    /* Check arguments */
+    if(argc < 2) {
+        Print("ERROR: Number of arguments is below than 2");
+    }
+    try
+    {
+        /* Select jobs */
+        for(int Index=1; Index<argc; Index++) {
+            if(strcmp(argv[Index], "-p")==0) {
+                Index++;
+                int Port = atoi(argv[Index]);           
+                TCP *tcp = new TCP();
+                std::queue<TCP::struct_Listen::struct_Status> * Status = tcp->AddListen(Port, CallBack);
+                if(Status) {
+                    while (true) {
+                        if(!Status->empty()) {
+                            Print("Messege : [" + Status->front().Messege + "] Error : [" + to_string(Status->front().Error) + "]");  
+                            Status->pop();
+                        }                        
+                    }
+                }
+                else {
+                    Print("ERROR: AddListen");
+                }
+            }
+        }
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 	 /* Exit */
      return 0; 
 }
