@@ -55,7 +55,7 @@ std::queue<TCP::struct_Listen::struct_Status> * TCP::AddListen(int Port, bool (*
                 return nullptr;
             }
             /* MESSEGE on accept */
-            Listen->Status.push({0, "Opened socket " + to_string(Listen->Server.Socket)});
+            Listen->Status.push({0, "Opened port " + to_string(Port) + " socket " + to_string(Listen->Server.Socket)});
             if (bind(Listen->Server.Socket, (struct sockaddr *) &Listen->Server.Addr, sizeof(sockaddr_in)) < 0) {
                 /* ERROR on binding */
                 close(Listen->Server.Socket);
@@ -125,6 +125,17 @@ std::queue<TCP::struct_Listen::struct_Status> * TCP::AddListen(int Port, bool (*
         return &Listen->Status;
     }
     return nullptr;
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+bool TCP::Send(int Socket, char* Data, int Length) {
+    try {
+        if(write(Socket, Data, Length) > 0)
+        {
+            return true;
+        }
+    }
+    catch(...){};
+    return false;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
 }

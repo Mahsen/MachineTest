@@ -32,9 +32,7 @@ using namespace net;
 /************************************************** Variables *********************************************************/
 std::mutex Mutex_print;
 /************************************************** Opjects ***********************************************************/
-/*
-    Nothing
-*/
+TCP *tcp;
 /************************************************** Functions *********************************************************/
 void Print(string str) {
     /* Lock untile return of block */
@@ -43,24 +41,30 @@ void Print(string str) {
     std::cout << str << endl;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
-bool CallBack (int Socket, char* Data, int* Length) {
+bool Core_CallBack (int Socket, char* Data, int* Length) {
     Print(Data);
-    //sprintf(Data, "I see\r\n");
+    return true;
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+bool UI_CallBack (int Socket, char* Data, int* Length) {
 
-    int Page_Length;
-
-    ifstream file("index.html");
     string Line = "";
-    char Page_Data[10240];
-    memset(Page_Data, 0, sizeof(Page_Data));
-    while (getline(file, Line)) {
-        strcat(Page_Data, Line.c_str());
-        Page_Length += Line.length();
-    }
-    sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: %d\n\n", Page_Length);
+    ifstream file;
+    struct stat info;
+    string filename = "index.html";
+
+    stat(filename.c_str(), &info); 
+
+    sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: %ld\n\n", info.st_size);
     *Length = strlen(Data);
-    strcpy(&Data[*Length], Page_Data);
-    *Length += Page_Length;
+    tcp->Send(Socket, Data, strlen(Data));
+    file.open(filename);  
+    while (getline(file, Line)) {
+        tcp->Send(Socket, (char*)Line.c_str(), Line.length());
+    }
+    file.close();
+
+    *Length = 0;
     return true;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -78,18 +82,23 @@ int main(int argc, char **argv) {
             if(strcmp(argv[Index], "-p")==0) {
                 Index++;
                 int Port = atoi(argv[Index]);           
-                TCP *tcp = new TCP();
-                std::queue<TCP::struct_Listen::struct_Status> * Status = tcp->AddListen(Port, CallBack);
-                if(Status) {
+                tcp = new TCP();
+                std::queue<TCP::struct_Listen::struct_Status> * UI_Status = tcp->AddListen(Port, UI_CallBack); 
+                std::queue<TCP::struct_Listen::struct_Status> * Core_Status = tcp->AddListen(Port+1, Core_CallBack);                               
+                if(Core_Status && UI_Status) {
                     while (true) {
-                        if(!Status->empty()) {
-                            Print("Messege : [" + Status->front().Messege + "] Error : [" + to_string(Status->front().Error) + "]");  
-                            Status->pop();
-                        }                        
+                        if(!UI_Status->empty()) {
+                            Print("UI Messege : [" + UI_Status->front().Messege + "] Error : [" + to_string(UI_Status->front().Error) + "]");  
+                            UI_Status->pop();
+                        } 
+                        if(!Core_Status->empty()) {
+                            Print("Core Messege : [" + Core_Status->front().Messege + "] Error : [" + to_string(Core_Status->front().Error) + "]");  
+                            Core_Status->pop();
+                        }                                                
                     }
                 }
                 else {
-                    Print("ERROR: AddListen");
+                    Print("ERROR: Create server!");
                 }
             }
         }

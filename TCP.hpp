@@ -31,6 +31,7 @@ class TCP {
 		};    
 	public:	        						
 		std::queue<struct_Listen::struct_Status> * AddListen(int Port, bool (*CallBack)(int Socket, char* Data, int* Length));	
+		bool Send(int Socket, char* Data, int Length);
 };
 //----------------------------------------------------------
 }
