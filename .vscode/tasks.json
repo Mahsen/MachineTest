@@ -8,6 +8,7 @@
                 "-pthread",
                 "-fdiagnostics-color=always",
                 "-g",
+                "${fileDirname}/../Core/*.cpp",
                 "${fileDirname}/../Application/*.cpp",
                 "${fileDirname}/../Module/*.cpp",
                 "-o",

@@ -9,7 +9,7 @@
     Site : https://www.mahsen.ir
     Tel : +989124662703
     Email : info@mahsen.ir
-    Last Update : 2024/10/21
+    Last Update : 2024/11/6
 */
 /************************************************** Warnings **********************************************************/
 /*
@@ -133,6 +133,15 @@ bool TCP::Send(int Socket, char* Data, int Length) {
         {
             return true;
         }
+    }
+    catch(...){};
+    return false;
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+bool TCP::Close(int Socket) {
+    try {
+        close(Socket);
+        return true;
     }
     catch(...){};
     return false;

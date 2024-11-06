@@ -17,4 +17,9 @@
 #include <sys/stat.h>
 #include <netinet/in.h>
 //----------------------------------------------------------
+using namespace std;
+//----------------------------------------------------------
+void Print(string str);
+std::vector<std::string> split(std::string s, std::string delimiter);
+//----------------------------------------------------------
 #endif

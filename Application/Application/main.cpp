@@ -9,7 +9,7 @@
     Site : https://www.mahsen.ir
     Tel : +989124662703
     Email : info@mahsen.ir
-    Last Update : 2024/10/21
+    Last Update : 2024/11/6
 */
 /************************************************** Warnings **********************************************************/
 /*
@@ -23,26 +23,22 @@
 #include "../Core/Defines.hpp"
 #include "../Module/TCP.hpp"
 /************************************************** Defineds **********************************************************/
-/*
-    Nothing
-*/
+#define MAIN_UI_ROOT                                     "../UI"
+#define MAIN_UI_PAGE_DEFAULT                             "/index.html"
 /************************************************** Names *************************************************************/
 using namespace std;
 using namespace net;
 /************************************************** Variables *********************************************************/
-std::mutex Mutex_print;
+/*
+    Nothing
+*/
 /************************************************** Opjects ***********************************************************/
 TCP *tcp;
 /************************************************** Functions *********************************************************/
-void Print(string str) {
-    /* Lock untile return of block */
-    std::lock_guard<std::mutex> guard(Mutex_print);
-    /* Show on console */
-    std::cout << str << endl;
-}
-/*--------------------------------------------------------------------------------------------------------------------*/
 bool Core_CallBack (int Socket, char* Data, int* Length) {
     Print(Data);
+
+    tcp->Close(Socket);
     return true;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -51,20 +47,40 @@ bool UI_CallBack (int Socket, char* Data, int* Length) {
     string Line = "";
     ifstream file;
     struct stat info;
-    string filename = "index.html";
+    string filename = MAIN_UI_ROOT + string(MAIN_UI_PAGE_DEFAULT);
 
-    stat(filename.c_str(), &info); 
+    //Print(Data);
 
-    sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: %ld\n\n", info.st_size);
+    if(strstr(Data, "GET /")) {
+        vector<string> ParameterGET = split(string(Data), " ");
+        
+        if(ParameterGET[1].size() > 1) {
+            filename = MAIN_UI_ROOT + ParameterGET[1];
+            Print("Request file name is " + filename);
+        }
+        if(stat(filename.c_str(), &info) == 0) {
+            sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: %ld\n\n", info.st_size);
+            *Length = strlen(Data);
+            tcp->Send(Socket, Data, strlen(Data));
+            file.open(filename);  
+            while (getline(file, Line)) {
+                tcp->Send(Socket, (char*)Line.c_str(), Line.length());
+            }
+            file.close();
+
+            *Length = 0;
+            tcp->Close(Socket);
+            return true;
+        }
+    }
+
+    sprintf(Data, "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 0\n\n");
     *Length = strlen(Data);
     tcp->Send(Socket, Data, strlen(Data));
-    file.open(filename);  
-    while (getline(file, Line)) {
-        tcp->Send(Socket, (char*)Line.c_str(), Line.length());
-    }
-    file.close();
+
 
     *Length = 0;
+    tcp->Close(Socket);
     return true;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -108,8 +124,8 @@ int main(int argc, char **argv) {
         std::cerr << e.what() << '\n';
     }
     
-	 /* Exit */
-     return 0; 
+    /* Exit */
+    return 0; 
 }
 /************************************************** Tasks *************************************************************/
 /*
