@@ -1,7 +1,7 @@
 #ifndef __ADVANCEDTYPES_HPP
 #define __ADVANCEDTYPES_HPP
 //----------------------------------------------------------
-#include "Defines.hpp"
+#include "../Core/Defines.hpp"
 //----------------------------------------------------------
 /// ساختار متغير 64 بيتي سبک
 //{

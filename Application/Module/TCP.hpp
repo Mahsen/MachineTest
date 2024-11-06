@@ -1,8 +1,8 @@
 #ifndef __TCP_HPP
 #define __TCP_HPP
 //----------------------------------------------------------
-#include "Defines.hpp"
-#include "AdvancedTypes.hpp"
+#include "../Core/Defines.hpp"
+#include "../Class/AdvancedTypes.hpp"
 //----------------------------------------------------------
 namespace net {
 using namespace std;
