@@ -1,0 +1,23 @@
+body {
+	background: linear-gradient(135deg, #6a11cb, #2575fc);
+}
+#Main {
+	background: #FFFFFF;
+	height: 500px;
+}
+#Version {
+	color:white; 
+	bottom: 0px; 
+	position: absolute;
+}
+h2 {
+	text-align: center;
+}
+ul li a {
+	background: #000000;
+	width: 7em;
+	text-align: center;
+}
+#tabs {
+	height: 100%;
+}

@@ -25,6 +25,7 @@
 /************************************************** Defineds **********************************************************/
 #define MAIN_UI_ROOT                                     "../UI"
 #define MAIN_UI_PAGE_DEFAULT                             "/index.html"
+#define MAIN_UI_PAGE_LOGIN                               "/login.html"
 /************************************************** Names *************************************************************/
 using namespace std;
 using namespace net;
