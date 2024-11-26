@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <thread>
+#include <experimental/filesystem>
 #include <mutex>  
 #include <queue>
 #include <vector>  
@@ -16,6 +17,8 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <netinet/in.h>
+#include <sys/unistd.h>
+#include <netdb.h>
 //----------------------------------------------------------
 using namespace std;
 //----------------------------------------------------------

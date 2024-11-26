@@ -9,7 +9,7 @@
     Site : https://www.mahsen.ir
     Tel : +989124662703
     Email : info@mahsen.ir
-    Last Update : 2024/11/6
+    Last Update : 2024/11/26
 */
 /************************************************** Warnings **********************************************************/
 /*
@@ -29,12 +29,36 @@
 using namespace std;
 using namespace net;
 /************************************************** Variables *********************************************************/
-/*
-    Nothing
-*/
+char Local_Path[128];
+union IPv4
+{
+    in_addr_t s_addr;
+    struct {
+        unsigned char b[4];
+    } _U8;
+};
+union IPv4 Local_IP;
 /************************************************** Opjects ***********************************************************/
 TCP *tcp;
 /************************************************** Functions *********************************************************/
+bool getMyIP(IPv4 *myIP) {
+    char szBuffer[1024];
+
+    if(gethostname(szBuffer, sizeof(szBuffer)) == -1) {
+      return false;
+    }
+
+    struct hostent *host = gethostbyname(szBuffer);
+    if(host == NULL) {
+      return false;
+    }
+
+    //Obtain the computer's IP
+    myIP->s_addr = ((struct in_addr *)(host->h_addr))->s_addr;
+
+    return true;
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
 bool Core_CallBack (int Socket, char* Data, int* Length) {
     Print(Data);
 
@@ -47,7 +71,7 @@ bool UI_CallBack (int Socket, char* Data, int* Length) {
     string Line = "";
     ifstream file;
     struct stat info;
-    string filename = MAIN_UI_ROOT + string(MAIN_UI_PAGE_DEFAULT);
+    string filename = string(Local_Path) + MAIN_UI_ROOT + string(MAIN_UI_PAGE_DEFAULT);
 
     //Print(Data);
 
@@ -55,10 +79,11 @@ bool UI_CallBack (int Socket, char* Data, int* Length) {
         vector<string> ParameterGET = split(string(Data), " ");
         
         if(ParameterGET[1].size() > 1) {
-            filename = MAIN_UI_ROOT + ParameterGET[1];
+            filename = string(Local_Path) + MAIN_UI_ROOT + ParameterGET[1];
             Print("Request file name is " + filename);
-        }
+        }        
         if(stat(filename.c_str(), &info) == 0) {
+            Print("success load file name is " + filename);
             sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: %ld\n\n", info.st_size);
             *Length = strlen(Data);
             tcp->Send(Socket, Data, strlen(Data));
@@ -72,6 +97,7 @@ bool UI_CallBack (int Socket, char* Data, int* Length) {
             tcp->Close(Socket);
             return true;
         }
+        Print("faild load file name is " + filename);
     }
 
     sprintf(Data, "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 0\n\n");
@@ -88,6 +114,23 @@ int main(int argc, char **argv) {
     /* Sample */
     // sudo ./main -p 1020
     /* Check arguments */
+
+    if (getcwd(Local_Path, sizeof(Local_Path)) != NULL) {
+        Print("Current working dir : " + string(Local_Path));
+    } else {
+    Print("ERROR: getcwd() error");
+        return 0;
+    }
+
+
+    if (getMyIP(&Local_IP)) {
+        char str[32];
+        sprintf(str, "%d.%d.%d.%d", Local_IP._U8.b[0], Local_IP._U8.b[1], Local_IP._U8.b[2], Local_IP._U8.b[3]);
+        Print("Local IP : " + string(str));
+    } else {
+        Print("ERROR: gethostname() error");
+    }
+
     if(argc < 2) {
         Print("ERROR: Number of arguments is below than 2");
     }
@@ -116,6 +159,10 @@ int main(int argc, char **argv) {
                 else {
                     Print("ERROR: Create server!");
                 }
+            }
+            else if(strcmp(argv[Index], "-s")==0) {
+                strcpy(Local_Path, argv[Index+1]);
+                Print("Change Current working dir: " + string(Local_Path));
             }
         }
     }
