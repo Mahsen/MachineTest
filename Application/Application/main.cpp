@@ -23,7 +23,7 @@
 #include "../Core/Defines.hpp"
 #include "../Module/TCP.hpp"
 /************************************************** Defineds **********************************************************/
-#define MAIN_UI_ROOT                                     "../UI"
+#define MAIN_UI_ROOT                                     "/../UI"
 #define MAIN_UI_PAGE_DEFAULT                             "/index.html"
 #define MAIN_UI_PAGE_LOGIN                               "/login.html"
 /************************************************** Names *************************************************************/
@@ -67,6 +67,21 @@ bool Core_CallBack (int Socket, char* Data, int* Length) {
     return true;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
+string GetContentType(string filename) {
+    if(filename.substr(filename.find_last_of(".") + 1) == "html") {
+        return "text/html";
+    }
+    else if(filename.substr(filename.find_last_of(".") + 1) == "css") {
+        return "text/css";
+    }
+    else if(filename.substr(filename.find_last_of(".") + 1) == "js") {
+        return "text/javascript";
+    }
+    else {
+        return "text/plain";
+    }
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
 bool UI_CallBack (int Socket, char* Data, int* Length) {
 
     string Line = "";
@@ -81,24 +96,27 @@ bool UI_CallBack (int Socket, char* Data, int* Length) {
         
         if(ParameterGET[1].size() > 1) {
             filename = string(Local_Path) + MAIN_UI_ROOT + ParameterGET[1];
-            Print("Request file name is " + filename);
+            Print("Request File " + filename);
         }        
         if(stat(filename.c_str(), &info) == 0) {
-            Print("success load file name is " + filename);
-            sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: %ld\n\n", info.st_size);
+            Print("Open File " + filename);
+            //Print("Socket " + string(Socket));
+            sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:%s\nContent-Length: %ld\n\n", GetContentType(filename).c_str(), info.st_size);
+            Print("Header File " + string(Data));
             *Length = strlen(Data);
             tcp->Send(Socket, Data, strlen(Data));
             file.open(filename);  
             while (getline(file, Line)) {
                 tcp->Send(Socket, (char*)Line.c_str(), Line.length());
             }
+            usleep(100000);
             file.close();
-
+            Print("Close File " + filename);
             *Length = 0;
             tcp->Close(Socket);
             return true;
         }
-        Print("faild load file name is " + filename);
+        Print("Faild File " + filename);
     }
 
     sprintf(Data, "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 0\n\n");
@@ -117,7 +135,7 @@ int main(int argc, char **argv) {
     /* Check arguments */
 
     if (getcwd(Local_Path, sizeof(Local_Path)) != NULL) {
-        Print("Current working dir : " + string(Local_Path));
+        Print("Direction " + string(Local_Path));
     } else {
     Print("ERROR: getcwd() error");
         return 0;
@@ -163,7 +181,7 @@ int main(int argc, char **argv) {
             }
             else if(strcmp(argv[Index], "-s")==0) {
                 strcpy(Local_Path, argv[Index+1]);
-                Print("Change Current working dir: " + string(Local_Path));
+                Print("Change Direction " + string(Local_Path));
             }
         }
     }
