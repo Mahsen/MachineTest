@@ -39,6 +39,7 @@ union IPv4
     } _U8;
 };
 union IPv4 Local_IP;
+std::mutex Mutex_UI_CallBack;
 /************************************************** Opjects ***********************************************************/
 TCP *tcp;
 /************************************************** Functions *********************************************************/
@@ -77,12 +78,24 @@ string GetContentType(string filename) {
     else if(filename.substr(filename.find_last_of(".") + 1) == "js") {
         return "text/javascript";
     }
+    else if(filename.substr(filename.find_last_of(".") + 1) == "ico") {
+        return "image/x-icon";
+    }
+    else if(filename.substr(filename.find_last_of(".") + 1) == "jpeg") {
+        return "image/jpeg";
+    }
+    else if(filename.substr(filename.find_last_of(".") + 1) == "png") {
+        return "image/png";
+    }
     else {
         return "text/plain";
     }
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
 bool UI_CallBack (int Socket, char* Data, int* Length) {
+
+    /* Lock untile return of block */
+    std::lock_guard<std::mutex> guard(Mutex_UI_CallBack);
 
     string Line = "";
     ifstream file;
@@ -100,32 +113,36 @@ bool UI_CallBack (int Socket, char* Data, int* Length) {
         }        
         if(stat(filename.c_str(), &info) == 0) {
             Print("Open File " + filename);
-            //Print("Socket " + string(Socket));
             sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:%s\nContent-Length: %ld\n\n", GetContentType(filename).c_str(), info.st_size);
             Print("Header File " + string(Data));
+            Print("Write Socket " + to_string(Socket));
             *Length = strlen(Data);
             tcp->Send(Socket, Data, strlen(Data));
             file.open(filename);  
             while (getline(file, Line)) {
                 tcp->Send(Socket, (char*)Line.c_str(), Line.length());
+                tcp->Send(Socket, (char*)"\r\n", 2);
             }
-            usleep(100000);
             file.close();
             Print("Close File " + filename);
             *Length = 0;
-            tcp->Close(Socket);
+            //tcp->Close(Socket);
+            //Print("Close Socket " + to_string(Socket));            
             return true;
         }
         Print("Faild File " + filename);
+        sprintf(Data, "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 0\n\n");
+        *Length = strlen(Data);
+        tcp->Send(Socket, Data, strlen(Data));
+    }
+    else {
+        Print("Request not access");
     }
 
-    sprintf(Data, "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 0\n\n");
-    *Length = strlen(Data);
-    tcp->Send(Socket, Data, strlen(Data));
-
-
     *Length = 0;
+    //usleep(100000);    
     tcp->Close(Socket);
+    Print("Close Socket " + to_string(Socket));
     return true;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
