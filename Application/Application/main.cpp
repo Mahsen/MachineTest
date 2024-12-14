@@ -9,7 +9,7 @@
     Site : https://www.mahsen.ir
     Tel : +989124662703
     Email : info@mahsen.ir
-    Last Update : 2024/11/26
+    Last Update : 2024/12/14
 */
 /************************************************** Warnings **********************************************************/
 /*
@@ -26,6 +26,7 @@
 #define MAIN_UI_ROOT                                     "/../UI"
 #define MAIN_UI_PAGE_DEFAULT                             "/index.html"
 #define MAIN_UI_PAGE_LOGIN                               "/login.html"
+#define MAIN_UI_PAGE_RUNABLE                             ".dll"
 /************************************************** Names *************************************************************/
 using namespace std;
 using namespace net;
@@ -103,38 +104,60 @@ bool UI_CallBack (int Socket, char* Data, int* Length) {
     string filename = string(Local_Path) + MAIN_UI_ROOT + string(MAIN_UI_PAGE_DEFAULT);
 
     //Print(Data);
+    Print("\r\n---------------------------------------------------\r\n");
 
     if(strstr(Data, "GET /")) {
         vector<string> ParameterGET = split(string(Data), " ");
-        
-        if(ParameterGET[1].size() > 1) {
-            filename = string(Local_Path) + MAIN_UI_ROOT + ParameterGET[1];
-            Print("Request File " + filename);
-        }        
-        if(stat(filename.c_str(), &info) == 0) {
-            Print("Open File " + filename);
-            sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:%s\nContent-Length: %ld\n\n", GetContentType(filename).c_str(), info.st_size);
-            Print("Header File " + string(Data));
-            Print("Write Socket " + to_string(Socket));
-            *Length = strlen(Data);
+        if(strstr(ParameterGET[1].c_str() , MAIN_UI_PAGE_RUNABLE) > 0) {            
+            ParameterGET = split(ParameterGET[1], "?");
+            Print("Proccess Run " + ParameterGET[0]);
+            Print("Parameter" + ParameterGET[1]);
+            Print("Proccess End ");
+            
+            sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:application/json\nContent-Length: %ld\n\n", ParameterGET[1].length());
             tcp->Send(Socket, Data, strlen(Data));
-            file.open(filename);  
-            while (getline(file, Line)) {
-                tcp->Send(Socket, (char*)Line.c_str(), Line.length());
-                tcp->Send(Socket, (char*)"\r\n", 2);
-            }
-            file.close();
-            Print("Close File " + filename);
+            tcp->Send(Socket, (char*)ParameterGET[1].c_str(), strlen(ParameterGET[1].c_str()));
+            
             *Length = 0;
-            //tcp->Close(Socket);
-            //Print("Close Socket " + to_string(Socket));            
             return true;
+        }
+        else {
+            if(ParameterGET[1].size() > 1) {
+                filename = string(Local_Path) + MAIN_UI_ROOT + ParameterGET[1];
+                Print("Request File " + filename);
+            }        
+            if(stat(filename.c_str(), &info) == 0) {
+                Print("Open File " + filename);
+                sprintf(Data, "HTTP/1.1 200 OK\nContent-Type:%s\nContent-Length: %ld\n\n", GetContentType(filename).c_str(), info.st_size);
+                //Print("Header File " + string(Data));
+                Print("Write Socket " + to_string(Socket));
+                tcp->Send(Socket, Data, strlen(Data));
+                file.open(filename);  
+                while (getline(file, Line)) {
+                    tcp->Send(Socket, (char*)Line.c_str(), Line.length());
+                    tcp->Send(Socket, (char*)"\n", 1);
+                }
+                file.close();
+                Print("Close File " + filename);
+                *Length = 0;
+                //tcp->Close(Socket);
+                //Print("Close Socket " + to_string(Socket));            
+                return true;
+            }
         }
         Print("Faild File " + filename);
         sprintf(Data, "HTTP/1.1 403 OK\nContent-Type:text/html\nContent-Length: 0\n\n");
         *Length = strlen(Data);
         tcp->Send(Socket, Data, strlen(Data));
     }
+    /*else if(strstr(Data, "POST /")) {
+        Print(Data);
+        *Length = 113;
+        if(tcp->Receive(Socket, Data, Length)) {
+            Print(Data);
+        }
+        
+    }*/
     else {
         Print("Request not access");
     }

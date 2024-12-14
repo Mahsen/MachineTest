@@ -42,8 +42,8 @@
 /************************************************** Functions *********************************************************/
 function Refresh() {
 	$("#Main").html("Loading...");
-	Execute("", "Login", "", 10000).then(function (response) {
-        $("#Main").html("Ok");
+	Execute("", "Login", "", 10000).then(function (response) {        
+        $("#Main").html(response);
     }).catch(function (response) {
 		$("#Main").html("Failed");
 	});
@@ -61,8 +61,8 @@ function Execute(IpAddress, Command, Value, TimeOut) {
             TimeOut: TimeOut
         };
         $.ajax({
-            type: "POST",
-            url: "Default.aspx/Execute",
+            type: "GET",
+            url: "Execute.dll",
             data: JSON.stringify({ inputdata: StructData }),
             contentType: "application/json; charset=utf-8",
             dataType: "json",
