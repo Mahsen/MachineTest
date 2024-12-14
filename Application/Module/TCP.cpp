@@ -9,7 +9,7 @@
     Site : https://www.mahsen.ir
     Tel : +989124662703
     Email : info@mahsen.ir
-    Last Update : 2024/11/26
+    Last Update : 2024/12/14
 */
 /************************************************** Warnings **********************************************************/
 /*
@@ -125,6 +125,18 @@ std::queue<TCP::struct_Listen::struct_Status> * TCP::AddListen(int Port, bool (*
         return &Listen->Status;
     }
     return nullptr;
+}
+/*--------------------------------------------------------------------------------------------------------------------*/
+bool TCP::Receive(int Socket, char* Data, int *Length) {
+    try {
+        *Length = read(Socket, Data, *Length);
+        if(*Length > 0)
+        {
+            return true;
+        }
+    }
+    catch(...){};
+    return false;
 }
 /*--------------------------------------------------------------------------------------------------------------------*/
 bool TCP::Send(int Socket, char* Data, int Length) {
